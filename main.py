@@ -26,7 +26,7 @@ from gensim.models import Word2Vec
 load_dotenv()
 intents = discord.Intents().all()
 bot = discord.Client(intents=intents)
-client = commands.Bot(command_prefix='!', intents=intents, activity = discord.Activity(type=discord.ActivityType.listening, name="Musica Senape"))  # prefix our commands with '.'
+client = commands.Bot(command_prefix='!', intents=intents, activity = discord.Activity(type=discord.ActivityType.listening, name="Hodevs"))  # prefix our commands with '.'
 
 
 players = {}
@@ -199,7 +199,7 @@ async def clear(ctx, amount=5):
     
 @client.command()
 async def weather(ctx, *, location):
-    API_key = "8fea508c57897a06ef26150cb9e3b1f6"
+    API_key = "Api_Key"
     weather_url = f"http://api.openweathermap.org/data/2.5/weather?q={location}&appid={API_key}&units=metric"
     weather_data = requests.get(weather_url)
     weather_data = weather_data.json()
