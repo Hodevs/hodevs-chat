@@ -6,6 +6,7 @@ import requests
 import scipy
 import re
 import networkx as nx
+import subprocess
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import stopwords
 from nltk.classify import NaiveBayesClassifier
@@ -109,6 +110,33 @@ def summarize_text(text):
 async def summarize(ctx, *, text: str):
     summary = summarize_text(text)
     await ctx.send(f"Summary: {summary}")
+    
+@client.command()
+async def checkcode(ctx, *, code: str):
+    process = subprocess.Popen(['python', '-c', code], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+
+    if process.returncode == 0:
+        await ctx.send("Code is correct!")
+    else:
+        await ctx.send(f"Error: {stderr.decode()}")
+        
+@client.command()
+async def changewords(ctx, *, text: str):
+    nltk.download('wordnet')
+    words = nltk.word_tokenize(text)
+    new_words = []
+    for word in words:
+        try:
+            synsets = wordnet.synsets(word)
+            if synsets:
+                new_word = synsets[0].lemmas()[0].name()
+                new_words.append(new_word)
+        except Exception as e:
+            await ctx.send(f"An error occurred: {e}")
+    new_text = ' '.join(new_words)
+    await ctx.send(new_text)
+    
     
 @client.command()
 async def chat(ctx, *, text):
