@@ -2,6 +2,7 @@
 
 ## Features
 - Summarize text from any source (website, document, etc.) using `!summarize [text]` command
+- Check if your code is right or not with `!checkcode [code]`
 - play music  with `!play [youtube link]` command
 - Easy to use and understand commands
 
