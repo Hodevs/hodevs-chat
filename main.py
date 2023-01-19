@@ -3,15 +3,14 @@ import os
 import json
 import nltk
 import requests
-import openai
 import scipy
+import re
 import networkx as nx
-openai.api_key = “key”
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import stopwords
 from nltk.classify import NaiveBayesClassifier
 from nltk.classify.util import accuracy
-import re
+from nltk.corpus import wordnet
 from nltk.cluster.util import cosine_distance
 from nltk.tokenize import sent_tokenize
 import numpy as np
