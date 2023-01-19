@@ -1,0 +1,16 @@
+scipy
+networkx
+numpy
+yt_dlp
+spotipy 
+bs4 
+youtube_dl 
+python-dotenv 
+discord.py 
+PyNaCl 
+ffmpeg 
+mysql-connector-python==8.0.26 
+dblpy==0.4.0 
+wavelink==0.9.10 
+youtube-search-python==1.4.9 
+nltk
