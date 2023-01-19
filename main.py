@@ -76,28 +76,35 @@ def train_classifier(data):
 
 classifier = None
 
-Load the pre-trained word2vec model
-model = Word2Vec.load("path/to/word2vec.model")
+def jaccard_similarity(sent1, sent2):
+    a = set(sent1) 
+    b = set(sent2)
+    c = a.intersection(b)
+    return float(len(c)) / (len(a) + len(b) - len(c))
 
-def summarize_text(text, top_n=3):
-    # Tokenize the text into sentences
-    sentences = sent_tokenize(text)
-    # Build sentence embeddings
-    sentence_embeddings = [np.mean([model.wv[word] for word in sent.split() if word in model.wv] 
-                           or [np.zeros(model.vector_size)], axis=0) for sent in sentences]
-    # Build sentence similarity matrix
-    sentence_similarity_matrix = [[cosine_distance(sentence_embeddings[i], sentence_embeddings[j]) for j in range(len(sentences))] for i in range(len(sentences))]
-    # Build sentence similarity graph
+
+def summarize_text(text):
+    stop_words = set(stopwords.words('english'))
+    sentences = nltk.sent_tokenize(text)
+    tokenized_sentences = [nltk.word_tokenize(sent) for sent in sentences]
+    cleaned_sentences = [[word for word in sent if word.lower() not in stop_words] for sent in tokenized_sentences]
+    sentence_similarity_matrix = np.zeros((len(sentences), len(sentences)))
+
+    for i in range(len(sentences)):
+        for j in range(len(sentences)):
+            if i != j:
+                sentence_similarity_matrix[i][j] = jaccard_similarity(cleaned_sentences[i], cleaned_sentences[j])
     sentence_similarity_graph = nx.from_numpy_array(sentence_similarity_matrix)
-    # Rank sentences by importance
     scores = nx.pagerank(sentence_similarity_graph)
-    # Sort sentences by importance
-    ranked_sentences = sorted(((scores[i],s) for i,s in enumerate(sentences)), reverse=True)
-    # Extract top N sentences
-    top_n_sentences = [ranked_sentences[i][1] for i in range(top_n)]
-    # Join sentences to form summary
-    summary = " ".join(top_n_sentences)
-    return summary
+    ranked_sentences = sorted(((scores[i], s) for i, s in enumerate(sentences)), reverse=True)
+    summarize_text = []
+    for i in range(3):
+        if i < len(ranked_sentences):
+            summarize_text.append(ranked_sentences[i][1])
+        else:
+            break
+    return ". ".join(summarize_text)
+
 
 @client.command()
 async def summarize(ctx, *, text: str):
