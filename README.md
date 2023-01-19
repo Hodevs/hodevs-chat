@@ -1,8 +1,8 @@
 # Summary Bot
 
 ## Features
-- Summarize text from any source (website, document, etc.) using `!summary [text]` command
-- Answer questions using natural language processing with `!question [text]` command
+- Summarize text from any source (website, document, etc.) using `!summarize [text]` command
+- play music  with `!play [youtube link]` command
 - Easy to use and understand commands
 
 ## Getting started
