@@ -1,4 +1,4 @@
-# Summary Bot
+# Hodevs Chat
 
 ## Features
 - Summarize text from any source (website, document, etc.) using `!summarize [text]` command
