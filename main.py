@@ -151,7 +151,16 @@ async def chat(ctx, *, text):
         await ctx.send("That's great to hear!")
     elif label == "not good":
         await ctx.send("I'm sorry to hear that.")
-
+        
+@client.command()
+async def wikipedia(ctx, *, query: str):
+    url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{query}"
+    response = requests.get(url)
+    data = json.loads(response.text)
+    if response.status_code == 200:
+        await ctx.send(data['extract'])
+    else:
+        await ctx.send(f"Sorry, I couldn't find a Wikipedia page for {query}.")
 
 # command for bot to join the channel of the user, if the bot has already joined and is in a different channel, it will move to the channel the user is in
 @client.command()
