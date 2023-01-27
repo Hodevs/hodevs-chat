@@ -1,3 +1,4 @@
+import subprocess
 import discord
 import os
 import json
@@ -22,7 +23,7 @@ from discord import FFmpegPCMAudio
 from discord import TextChannel
 from youtube_dl import YoutubeDL
 from gensim.models import Word2Vec
-
+badimports = ["import os", "import subprocess"]
 load_dotenv()
 intents = discord.Intents().all()
 bot = discord.Client(intents=intents)
@@ -83,6 +84,11 @@ def jaccard_similarity(sent1, sent2):
     return float(len(c)) / (len(a) + len(b) - len(c))
 
 
+def filter_bad_code(code: str):
+    if code in badimports:
+        return False
+    return True
+
 def summarize_text(text):
     stop_words = set(stopwords.words('english'))
     sentences = nltk.sent_tokenize(text)
@@ -111,15 +117,20 @@ async def summarize(ctx, *, text: str):
     summary = summarize_text(text)
     await ctx.send(f"Summary: {summary}")
     
+
+
 @client.command()
 async def checkcode(ctx, *, code: str):
-    process = subprocess.Popen(['python', '-c', code], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout, stderr = process.communicate()
+    if filter_bad_code(code):
+        process = subprocess.Popen(['python', '-c', code], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = process.communicate()
 
-    if process.returncode == 0:
-        await ctx.send("Code is correct!")
+        if process.returncode == 0:
+            await ctx.send("Code is correct!")
+        else:
+            await ctx.send(f"Error: {stderr.decode()}")
     else:
-        await ctx.send(f"Error: {stderr.decode()}")
+        await ctx.send("We do not support that type of imported module sadly.")
         
 @client.command()
 async def changewords(ctx, *, text: str):
