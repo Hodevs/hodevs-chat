@@ -23,12 +23,13 @@ from discord import FFmpegPCMAudio
 from discord import TextChannel
 from youtube_dl import YoutubeDL
 from gensim.models import Word2Vec
-badimports = ["import os", "import subprocess"]
+import ast
 load_dotenv()
 intents = discord.Intents().all()
 bot = discord.Client(intents=intents)
 client = commands.Bot(command_prefix='!', intents=intents, activity = discord.Activity(type=discord.ActivityType.listening, name="Hodevs"))  # prefix our commands with '.'
-
+bad_imports = ["os", "subprocess"]
+user_imports = []
 
 players = {}
 
@@ -70,6 +71,16 @@ def preprocess_text(text):
     tokens = [lemmatizer.lemmatize(token) for token in tokens if token not in stop_words]
     return tokens
 
+def checkimport(tree):
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+           user_imports.append("".join([n.name for n in node.names]))
+        elif isinstance(node, ast.ImportFrom):
+            user_imports.append(node.module)
+    temp = [x for x in user_imports if x in bad_imports]
+    if temp:
+        return True, temp[0]
+
 def train_classifier(data):
     features = [(({word: True for word in preprocess_text(text)}, label) for text, label in data)]
     classifier = NaiveBayesClassifier.train(features)
@@ -84,10 +95,6 @@ def jaccard_similarity(sent1, sent2):
     return float(len(c)) / (len(a) + len(b) - len(c))
 
 
-def filter_bad_code(code: str):
-    if code in badimports:
-        return False
-    return True
 
 def summarize_text(text):
     stop_words = set(stopwords.words('english'))
@@ -116,12 +123,12 @@ def summarize_text(text):
 async def summarize(ctx, *, text: str):
     summary = summarize_text(text)
     await ctx.send(f"Summary: {summary}")
-    
 
 
 @client.command()
 async def checkcode(ctx, *, code: str):
-    if filter_bad_code(code):
+    data = ast.parse(code)
+    if not checkimport(data)[0]:
         process = subprocess.Popen(['python', '-c', code], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = process.communicate()
 
@@ -130,8 +137,10 @@ async def checkcode(ctx, *, code: str):
         else:
             await ctx.send(f"Error: {stderr.decode()}")
     else:
-        await ctx.send("We do not support that type of imported module sadly.")
-        
+        await ctx.send("bad code! Cannot use {}".format(checkimport(data)[1]))
+    del user_imports[:]
+
+
 @client.command()
 async def changewords(ctx, *, text: str):
     nltk.download('wordnet')
