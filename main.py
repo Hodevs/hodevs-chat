@@ -127,19 +127,18 @@ async def summarize(ctx, *, text: str):
 
 @client.command()
 async def checkcode(ctx, *, code: str):
-    data = ast.parse(code)
-    if not checkimport(data)[0]:
-        process = subprocess.Popen(['python', '-c', code], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = process.communicate()
+    try:
+        tree = astor.strip_tree(code)
+    except SyntaxError:
+        await ctx.send("Invalid Syntax")
+        return
+    process = subprocess.Popen(["python", "-c", code], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
 
-        if process.returncode == 0:
-            await ctx.send("Code is correct!")
-        else:
-            await ctx.send(f"Error: {stderr.decode()}")
+    if process.returncode == 0:
+        await ctx.send("Code is correct!")
     else:
-        await ctx.send("bad code! Cannot use {}".format(checkimport(data)[1]))
-    del user_imports[:]
-
+        await ctx.send(f"Error: {stderr.decode()}")
 
 @client.command()
 async def changewords(ctx, *, text: str):
