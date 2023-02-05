@@ -88,41 +88,38 @@ def train_classifier(data):
 
 classifier = None
 
-def jaccard_similarity(sent1, sent2):
-    a = set(sent1) 
-    b = set(sent2)
-    c = a.intersection(b)
-    return float(len(c)) / (len(a) + len(b) - len(c))
+def jaccard_similarity(list1, list2):
+    s1 = set(list1)
+    s2 = set(list2)
+    return len(s1 & s2) / len(s1 | s2)
 
+@client.hybrid_command(name="summarize")
+async def summarize(ctx, num_sentences: int, language: str, *, text: str):
+    if language == "english":
+        stop_words = stop_words_english
+    elif language == "french":
+        stop_words = stop_words_french
+    elif language == "italian":
+        stop_words = stop_words_italian
+    elif language == "spanish":
+        stop_words = stop_words_spanish
+    sentences = sent_tokenize(text)
+    words = [word_tokenize(sent) for sent in sentences]
+    words = [[word.lower() for word in sent if word.isalpha()] for sent in words]
+    words = [[word for word in sent if word not in stop_words] for sent in words]
 
-
-def summarize_text(text):
-    stop_words = set(stopwords.words('english'))
-    sentences = nltk.sent_tokenize(text)
-    tokenized_sentences = [nltk.word_tokenize(sent) for sent in sentences]
-    cleaned_sentences = [[word for word in sent if word.lower() not in stop_words] for sent in tokenized_sentences]
-    sentence_similarity_matrix = np.zeros((len(sentences), len(sentences)))
-
+    similarity_matrix = np.zeros((len(sentences), len(sentences)))
     for i in range(len(sentences)):
         for j in range(len(sentences)):
             if i != j:
-                sentence_similarity_matrix[i][j] = jaccard_similarity(cleaned_sentences[i], cleaned_sentences[j])
-    sentence_similarity_graph = nx.from_numpy_array(sentence_similarity_matrix)
-    scores = nx.pagerank(sentence_similarity_graph)
-    ranked_sentences = sorted(((scores[i], s) for i, s in enumerate(sentences)), reverse=True)
-    summarize_text = []
-    for i in range(3):
-        if i < len(ranked_sentences):
-            summarize_text.append(ranked_sentences[i][1])
-        else:
-            break
-    return ". ".join(summarize_text)
+                similarity_matrix[i][j] = jaccard_similarity(words[i], words[j])
 
+    similarity_graph = nx.from_numpy_array(similarity_matrix)
+    scores = nx.pagerank(similarity_graph)
+    ranked_sentences = sorted(((scores[i], sent) for i, sent in enumerate(sentences)), reverse=True)
 
-@client.command()
-async def summarize(ctx, *, text: str):
-    summary = summarize_text(text)
-    await ctx.send(f"Summary: {summary}")
+    summary = " ".join([ranked_sentences[i][1] for i in range(num_sentences)])
+    await ctx.send(summary)
 
 
 @client.command()
@@ -141,19 +138,43 @@ async def checkcode(ctx, *, code: str):
     del user_imports[:]
 
 
+lemmatizer = WordNetLemmatizer()
+
+def find_synonym(word):
+    synonyms = []
+    for syn in wordnet.synsets(word):
+        for lemma in syn.lemmas():
+            synonyms.append(lemma.name())
+    if len(synonyms) > 0:
+        return synonyms[0]
+    else:
+        return word
+
 @client.command()
 async def changewords(ctx, *, text: str):
-    nltk.download('wordnet')
-    words = nltk.word_tokenize(text)
+    words = word_tokenize(text)
     new_words = []
     for word in words:
         try:
-            synsets = wordnet.synsets(word)
-            if synsets:
-                new_word = synsets[0].lemmas()[0].name()
-                new_words.append(new_word)
-        except Exception as e:
-            await ctx.send(f"An error occurred: {e}")
+            pos = nltk.pos_tag([word])[0][1]
+            if pos.startswith('J'):
+                pos = wordnet.ADJ
+            elif pos.startswith('V'):
+                pos = wordnet.VERB
+            elif pos.startswith('N'):
+                pos = wordnet.NOUN
+            elif pos.startswith('R'):
+                pos = wordnet.ADV
+            else:
+                pos = None
+            lemma = lemmatizer.lemmatize(word, pos)
+            synonym = find_synonym(lemma)
+            if synonym:
+                new_words.append(synonym)
+            else:
+                new_words.append(word)
+        except KeyError:
+            new_words.append(word)
     new_text = ' '.join(new_words)
     await ctx.send(new_text)
     
