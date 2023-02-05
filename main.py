@@ -50,10 +50,18 @@ async def status_task() -> None:
     statuses = ["Musica Senaposa"]
     await bot.change_presence(activity=discord.Streaming.Game(random.choice(statuses))) 
     
+@client.event
+async def on_command(ctx):
+    print(f"Command used: {ctx.command}")
+    
 nltk.download('punkt')
 nltk.download('wordnet')
 nltk.download('stopwords')
-stop_words = set(stopwords.words('english'))
+nltk.download('averaged_perceptron_tagger')
+stop_words_english = set(stopwords.words('english'))
+stop_words_italian = set(stopwords.words('italian'))
+stop_words_french = set(stopwords.words('french'))
+stop_words_spanish = set(stopwords.words('spanish'))
 lemmatizer = WordNetLemmatizer()
 data = [
     ("Hi, how are you?", "greeting"),
